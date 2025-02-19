@@ -22,6 +22,9 @@ module user_domain import user_pkg::*; import croc_pkg::*; #(
   input  logic [      GpioCount-1:0] gpio_in_sync_i, // synchronized GPIO inputs
   output logic [NumExternalIrqs-1:0] interrupts_o // interrupts to core
 );
+  typedef logic [31:0] word_t;
+
+  localparam int unsigned NumRegs = 4;
 
   assign interrupts_o = '0;  
 
@@ -50,10 +53,15 @@ module user_domain import user_pkg::*; import croc_pkg::*; #(
   sbr_obi_req_t user_error_obi_req;
   sbr_obi_rsp_t user_error_obi_rsp;
 
+  logic  [NumRegs-1:0] user_regs_from_obi_written;
+  word_t [NumRegs-1:0] user_regs_from_obi;
+
+  logic [NumRegs-1:0] user_regs_to_obi_write;
+  word_t [NumRegs-1:0] user_regs_to_obi;
+
   // Fanout into more readable signals
   assign user_error_obi_req              = all_user_sbr_obi_req[UserError];
   assign all_user_sbr_obi_rsp[UserError] = user_error_obi_rsp;
-
 
   //-----------------------------------------------------------------------------------------------
   // Demultiplex to User Subordinates according to address map
@@ -100,13 +108,44 @@ module user_domain import user_pkg::*; import croc_pkg::*; #(
 // User Subordinates
 //-------------------------------------------------------------------------------------------------
 
+  obi_reg #(
+    .NumRegs ( NumRegs ),
+    .RW      ( 4'b0111 )
+  ) i_user_reg (
+    .clk_i,
+    .rst_ni,
+    .obi_req_i ( all_user_sbr_obi_req[UserReg] ),
+    .obi_rsp_o ( all_user_sbr_obi_rsp[UserReg] ),
+
+    .reg_gnt_read_i('1),
+    .write_to_reg_i( user_regs_to_obi_write        ),
+    .regs_i        ( user_regs_to_obi[NumRegs-1:0] ),
+
+    .written_to_reg_o( user_regs_from_obi_written      ),
+    .regs_o          ( user_regs_from_obi[NumRegs-1:0] )
+  );
+
+  int8inator i_int8inator (
+    .clk_i,
+    .rst_ni,
+    .func_i   ( user_regs_from_obi[0] ),
+    .a_i      ( user_regs_from_obi[1] ),
+    .b_i      ( user_regs_from_obi[2] ),
+    .result_o ( user_regs_to_obi  [3] )
+  );
+
+  assign user_regs_to_obi_write = {1'b1, 3'd0};
+  assign user_regs_to_obi[0] = '0;
+  assign user_regs_to_obi[1] = '0;
+  assign user_regs_to_obi[2] = '0;
+
   // Error Subordinate
   obi_err_sbr #(
     .ObiCfg      ( SbrObiCfg     ),
     .obi_req_t   ( sbr_obi_req_t ),
     .obi_rsp_t   ( sbr_obi_rsp_t ),
     .NumMaxTrans ( 1             ),
-    .RspData     ( 32'hBADCAB1E  )
+    .RspData     ( 32'hDEADBEEF  )
   ) i_user_err (
     .clk_i,
     .rst_ni,

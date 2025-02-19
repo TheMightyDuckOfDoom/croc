@@ -11,29 +11,99 @@
 #include "gpio.h"
 #include "util.h"
 
-/// @brief Example integer square root
-/// @return integer square root of n
-uint32_t isqrt(uint32_t n) {
-    uint32_t res = 0;
-    uint32_t bit = (uint32_t)1 << 30;
+unsigned int
+__mulsi3 (unsigned int a, unsigned int b)
+{
+  unsigned int r = 0;
 
-    while (bit > n) bit >>= 2;
-
-    while (bit) {
-        if (n >= res + bit) {
-            n -= res + bit;
-            res = (res >> 1) + bit;
-        } else {
-            res >>= 1;
-        }
-        bit >>= 2;
+  while (a)
+    {
+      if (a & 1)
+	r += b;
+      a >>= 1;
+      b <<= 1;
     }
-    return res;
+  return r;
+}
+
+#define n 16
+#define func 1
+
+void naive_func(int8_t* restrict a, int8_t* restrict b, int8_t* restrict c) {
+    for(int i = 0; i < n; i++) {
+        switch(func) {
+            case 0: c[i] = a[i] + b[i]; break;
+            case 1: c[i] = a[i] - b[i]; break;
+            case 2: c[i] = a[i] * b[i]; break;
+            default: c[i] = 0;
+        }
+    }
+}
+
+void accel_func(int8_t* restrict a, int8_t* restrict b, int8_t* restrict c) {
+    volatile uint32_t *user_reg = (volatile uint32_t *)0x20000000;
+
+    uint32_t* a_ptr = (uint32_t*)a;
+    uint32_t* b_ptr = (uint32_t*)b;
+    uint32_t* c_ptr = (uint32_t*)c;
+
+    user_reg[0] = func;
+    for(int i = 0; i < n; i += 4) {
+        // Write a and b to the accelerator
+        user_reg[1] = a_ptr[i / 4];
+        user_reg[2] = b_ptr[i / 4];
+
+        // Read result
+        c_ptr[i / 4] = user_reg[3];
+    }
+}
+
+
+void bench_function() {
+    int8_t a[n];
+    int8_t b[n];
+    int8_t c_naive[n]; 
+    int8_t c_accel[n]; 
+
+    for(int i = 0; i < n; i++) {
+        a[i] = i;
+        b[i] = i << 4;
+    }
+
+    uint32_t start = get_mcycle();
+    naive_func(a, b, c_naive);
+    uint32_t end   = get_mcycle();
+    gpio_write(end - start);
+
+    start = get_mcycle();
+    accel_func(a, b, c_accel);
+    end   = get_mcycle();
+    gpio_write(end - start);
+
+    // Compare results
+    for(int i = 0; i < n; i++) {
+        if(c_naive[i] != c_accel[i]) {
+            printf("Error at index %x: %x != %x\n", i, c_naive[i], c_accel[i]);
+        }
+    }
 }
 
 int main() {
     uart_init(); // setup the uart peripheral
 
+    printf("Started\n");
+    uart_write_flush();
+
+    gpio_set_direction(0xFFFF, 0xFFFF);
+    gpio_write(0x00);
+    gpio_enable(0xFFFF);
+
+    bench_function();
+
+    printf("Done\n");
+    uart_write_flush();
+
+    /*
     // simple printf support (only prints text and hex numbers)
     printf("Hello World!\n");
     // wait until uart has finished sending
@@ -64,5 +134,6 @@ int main() {
     sleep_ms(10);
     printf("Tock\n");
     uart_write_flush();
+    */
     return 1;
 }

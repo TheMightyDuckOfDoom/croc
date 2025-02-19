@@ -85,7 +85,7 @@ VERILATOR_ARGS  = --binary -j 0 -Wno-fatal
 VERILATOR_ARGS += -Wno-style
 VERILATOR_ARGS += --timing --autoflush --trace --trace-structs
 
-verilator/croc.f: Bender.lock Bender.yml
+verilator/croc.f: Bender.lock Bender.yml rtl/**/*.sv
 	$(BENDER) script verilator -t rtl -t verilator -DSYNTHESIS -DVERILATOR > $@
 
 ## Simulate RTL using Verilator

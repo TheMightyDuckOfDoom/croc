@@ -41,6 +41,10 @@ sources:
       - rtl/soc_ctrl/soc_ctrl_reg_top.sv
       - rtl/gpio/gpio_reg_top.sv
       - rtl/gpio/gpio.sv
+
+      - rtl/user_domain/obi_reg.sv
+      - rtl/user_domain/int8inator.sv
+
       # Level 2
       - rtl/croc_domain.sv
       - rtl/user_domain.sv

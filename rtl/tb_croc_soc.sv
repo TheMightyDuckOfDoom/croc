@@ -439,6 +439,9 @@ module tb_croc_soc #(
 
     logic [31:0] tb_data;
 
+    always @(gpio_o)
+        $display("@%t | [GPIO] %h", $time, gpio_o);
+
     initial begin
         $timeformat(-9, 0, "ns", 12); // 1: scale (ns=-9), 2: decimals, 3: suffix, 4: print-field width
         // configure VCD dump
