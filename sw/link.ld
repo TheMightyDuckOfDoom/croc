@@ -10,9 +10,9 @@
 OUTPUT_ARCH("riscv")
 ENTRY(_start)
 
-MEMORY 
+MEMORY
 {
-   SRAM (rwxail) : ORIGIN = 0x10000000, LENGTH = 2K
+   SRAM (rwxail) : ORIGIN = 0x10000000, LENGTH = 6K
 }
 
 SECTIONS
