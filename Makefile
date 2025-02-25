@@ -143,6 +143,19 @@ help: Makefile
 
 .PHONY: help
 
+FLOPOCO_WORKSPACE:=rtl/user_domain/flopoco_workspace
+VHDL_FILES:=$(wildcard $(FLOPOCO_WORKSPACE)/*.vhdl)
+VHDL_V_FILES:= $(patsubst %.vhdl,%.v,$(VHDL_FILES))
+
+$(FLOPOCO_WORKSPACE): rtl/user_domain/flopoco_genvhdl.sh
+	cd rtl/user_domain && ./flopoco_genvhdl.sh
+
+flopoco_vhdl: $(FLOPOCO_WORKSPACE)
+
+$(VHDL_V_FILES):$(VHDL_FILES) rtl/user_domain/vhdl2v.sh
+	cd rtl/user_domain && ./vhdl2v.sh
+
+flopoco: $(VHDL_V_FILES)
 
 ###########
 # Cleanup #
@@ -150,6 +163,7 @@ help: Makefile
 
 clean: 
 	rm -f $(SV_FLIST)
+	rm -rf $(FLOPOCO_WORKSPACE)
 	rm -f klayout/croc_chip.gds
 	rm -rf verilator/obj_dir/
 	rm -f verilator/croc.f

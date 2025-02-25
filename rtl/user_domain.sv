@@ -50,10 +50,16 @@ module user_domain import user_pkg::*; import croc_pkg::*; #(
   sbr_obi_req_t user_error_obi_req;
   sbr_obi_rsp_t user_error_obi_rsp;
 
+  // Fpinator Subordinate Bus
+  sbr_obi_req_t user_fpinator_obi_req;
+  sbr_obi_rsp_t user_fpinator_obi_rsp;
+
   // Fanout into more readable signals
   assign user_error_obi_req              = all_user_sbr_obi_req[UserError];
   assign all_user_sbr_obi_rsp[UserError] = user_error_obi_rsp;
 
+  assign user_fpinator_obi_req              = all_user_sbr_obi_req[UserFpinator];
+  assign all_user_sbr_obi_rsp[UserFpinator] = user_fpinator_obi_rsp;
 
   //-----------------------------------------------------------------------------------------------
   // Demultiplex to User Subordinates according to address map
@@ -115,4 +121,15 @@ module user_domain import user_pkg::*; import croc_pkg::*; #(
     .obi_rsp_o  ( user_error_obi_rsp )
   );
 
+  fpinator #(
+    .ObiCfg    ( SbrObiCfg     ),
+    .obi_req_t ( sbr_obi_req_t ),
+    .obi_rsp_t ( sbr_obi_rsp_t )
+  ) i_user_fpinator (
+    .clk_i,
+    .rst_ni,
+
+    .obi_req_i ( user_fpinator_obi_req ),
+    .obi_rsp_o ( user_fpinator_obi_rsp )
+  );
 endmodule

@@ -11,24 +11,35 @@
 #include "gpio.h"
 #include "util.h"
 
-/// @brief Example integer square root
-/// @return integer square root of n
-uint32_t isqrt(uint32_t n) {
-    uint32_t res = 0;
-    uint32_t bit = (uint32_t)1 << 30;
+typedef union {
+    float f;
+    uint32_t i;
+} float_int_t;
 
-    while (bit > n) bit >>= 2;
+float fpinator_add(float a, float b) {
+    float_int_t fa, fb, fc;
+    fa.f = a;
+    fb.f = b;
 
-    while (bit) {
-        if (n >= res + bit) {
-            n -= res + bit;
-            res = (res >> 1) + bit;
-        } else {
-            res >>= 1;
-        }
-        bit >>= 2;
-    }
-    return res;
+    *reg32(FPINATOR_BASE_ADDR, 0) = 0; // Add
+    *reg32(FPINATOR_BASE_ADDR, 4) = fa.i;
+    *reg32(FPINATOR_BASE_ADDR, 8) = fb.i;
+    fc.i = *reg32(FPINATOR_BASE_ADDR, 12);
+
+    return fc.f;
+}
+
+float fpinator_sub(float a, float b) {
+    float_int_t fa, fb, fc;
+    fa.f = a;
+    fb.f = b;
+
+    *reg32(FPINATOR_BASE_ADDR, 0) = 1; // Sub
+    *reg32(FPINATOR_BASE_ADDR, 4) = fa.i;
+    *reg32(FPINATOR_BASE_ADDR, 8) = fb.i;
+    fc.i = *reg32(FPINATOR_BASE_ADDR, 12);
+
+    return fc.f;
 }
 
 int main() {
@@ -39,30 +50,30 @@ int main() {
     // wait until uart has finished sending
     uart_write_flush();
 
-    // toggling some GPIOs
-    gpio_set_direction(0xFFFF, 0x000F); // lowest four as outputs
-    gpio_write(0x0A);  // ready output pattern
-    gpio_enable(0xFF); // enable lowest eight
-    // wait a few cycles to give GPIO signal time to propagate
-    asm volatile ("nop; nop; nop; nop; nop;");
-    printf("GPIO (expect 0xA0): 0x%x\n", gpio_read());
-
-    gpio_toggle(0x0F); // toggle lower 8 GPIOs
-    asm volatile ("nop; nop; nop; nop; nop;");
-    printf("GPIO (expect 0x50): 0x%x\n", gpio_read());
-    uart_write_flush();
-
     // doing some compute
-    uint32_t start = get_mcycle();
-    uint32_t res   = isqrt(1234567890UL);
-    uint32_t end   = get_mcycle();
-    printf("Result: 0x%x, Cycles: 0x%x\n", res, end - start);
-    uart_write_flush();
+    volatile float_int_t a, b, c;
+    a.i = 0x3F800000; // 1.0
+    b.i = 0x40000000; // 2.0
 
-    // using the timer
-    printf("Tick\n");
-    sleep_ms(10);
-    printf("Tock\n");
+    uint64_t start = get_mcycle();
+    c.f = fpinator_add(a.f, b.f);
+    uint64_t time = get_mcycle() - start;
+    printf("Fpinator: 0x%x took %x cycles\n", c.i, time);
+
+    // Software float
+    start = get_mcycle();
+    c.f = a.f + b.f;
+    time = get_mcycle() - start;
+    printf("Fpinator: 0x%x took %x cycles\n", c.i, time);
+
+    c.f =fpinator_sub(c.f, b.f);
+    printf("Fpinator: 0x%x\n", c.i);
+    if(c.i == a.i) {
+        printf("Success!\n");
+    } else {
+        printf("Failure!\n");
+    }
+
     uart_write_flush();
     return 1;
 }

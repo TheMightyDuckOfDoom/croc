@@ -26,7 +26,7 @@ RISCV_STRIP   ?= $(RISCV_PREFIX)strip
 
 RISCV_FLAGS    ?= -march=$(RISCV_MARCH) -mabi=$(RISCV_MABI) -mcmodel=medany -static -std=gnu99 -Os -nostdlib -fno-builtin -ffreestanding
 RISCV_CCFLAGS  ?= $(RISCV_FLAGS) -Iinclude -I$(INCDIR) -I$(CURDIR)
-RISCV_LDFLAGS  ?= -static -nostartfiles -lm -lgcc $(RISCV_FLAGS)
+RISCV_LDFLAGS  ?= -static -nostartfiles -lm -lgcc -lc $(RISCV_FLAGS) -Wl,--gc-sections
 
 # all
 
@@ -38,7 +38,11 @@ BINDIR 	?= bin
 CRT0 	?= crt0.S
 LINK 	?= link.ld
 
-LIB_SOURCES := $(wildcard $(SRCDIR)/*.[cS])
+FP_PATH := RVfplib/src/asm/ieee754
+FP_FILTERS := $(wildcard $(FP_PATH)/__mul*)
+FP_SOURCES := $(filter-out $(FP_FILTERS), $(wildcard $(FP_PATH)/*.[S]))
+
+LIB_SOURCES := $(wildcard $(SRCDIR)/*.[cS]) $(FP_SOURCES)
 LIB_OBJS    := $(LIB_SOURCES:$(SRCDIR)/%=$(SRCDIR)/%.o)
 
 # Build all assembly and C files in the top level as seperate binaries
@@ -71,6 +75,10 @@ $(BINDIR)/%.hex: $(BINDIR)/%.elf
 
 # Phonies
 .PHONY: all clean compile
+
+test:
+	echo $(FILTERS)
+	echo $(LIB_SOURCES)
 
 clean:
 	rm -rf $(BINDIR)

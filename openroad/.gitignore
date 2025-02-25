@@ -1,4 +1,4 @@
 *.log
 save
-reports
+reports*
 out
