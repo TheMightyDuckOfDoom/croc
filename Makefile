@@ -84,12 +84,13 @@ vsim-yosys: vsim/compile_netlist.tcl $(SW_HEX) yosys/out/croc_yosys_debug.v
 VERILATOR_ARGS  = --binary -j 0 -Wno-fatal
 VERILATOR_ARGS += -Wno-style
 VERILATOR_ARGS += --timing --autoflush --trace --trace-structs
+RTL_SRC 	    = $(wildcard rtl/*/*.sv) $(wildcard rtl/*/*.v)
 
 verilator/croc.f: Bender.lock Bender.yml
 	$(BENDER) script verilator -t rtl -t verilator -DSYNTHESIS -DVERILATOR > $@
 
 ## Simulate RTL using Verilator
-verilator/obj_dir/Vtb_croc_soc: verilator/croc.f $(SW_HEX)
+verilator/obj_dir/Vtb_croc_soc: verilator/croc.f $(SW_HEX) $(RTL_SRC)
 	cd verilator; $(VERILATOR) $(VERILATOR_ARGS) -CFLAGS "-O0" --top tb_croc_soc -f croc.f
 
 verilator: verilator/obj_dir/Vtb_croc_soc
@@ -143,6 +144,10 @@ help: Makefile
 
 .PHONY: help
 
+###########
+# Flopoco #
+###########
+
 FLOPOCO_WORKSPACE:=rtl/user_domain/flopoco_workspace
 VHDL_FILES:=$(wildcard $(FLOPOCO_WORKSPACE)/*.vhdl)
 VHDL_V_FILES:= $(patsubst %.vhdl,%.v,$(VHDL_FILES))
@@ -150,11 +155,13 @@ VHDL_V_FILES:= $(patsubst %.vhdl,%.v,$(VHDL_FILES))
 $(FLOPOCO_WORKSPACE): rtl/user_domain/flopoco_genvhdl.sh
 	cd rtl/user_domain && ./flopoco_genvhdl.sh
 
+# Generate VHDL files with FloPoCo -> needs to be run in environment with FloPoCo installed
 flopoco_vhdl: $(FLOPOCO_WORKSPACE)
 
 $(VHDL_V_FILES):$(VHDL_FILES) rtl/user_domain/vhdl2v.sh
 	cd rtl/user_domain && ./vhdl2v.sh
 
+# Generate Verilog files from FloPoCo VHDL files -> needs to be run in eda docker
 flopoco: $(VHDL_V_FILES)
 
 ###########

@@ -42,12 +42,12 @@ sources:
       - rtl/gpio/gpio_reg_top.sv
       - rtl/gpio/gpio.sv
 
-      - rtl/user_domain/flopoco_workspace/IntAdder_27_comb_uid6.v
-      - rtl/user_domain/flopoco_workspace/IntAdder_31_comb_uid13.v
-      - rtl/user_domain/flopoco_workspace/LeftShifter27_by_max_26_comb_uid10.v
-      - rtl/user_domain/flopoco_workspace/LZC_26_comb_uid8.v
-      - rtl/user_domain/flopoco_workspace/RightShifterSticky26_by_max_25_comb_uid4.v
-      - rtl/user_domain/flopoco_workspace/IEEEFPAdd_8_23_comb_uid2.v
+      - rtl/user_domain/flopoco_workspace/IntAdder_27_Freq50_uid6.v
+      - rtl/user_domain/flopoco_workspace/IntAdder_31_Freq50_uid13.v
+      - rtl/user_domain/flopoco_workspace/LeftShifter27_by_max_26_Freq50_uid10.v
+      - rtl/user_domain/flopoco_workspace/LZC_26_Freq50_uid8.v
+      - rtl/user_domain/flopoco_workspace/RightShifterSticky26_by_max_25_Freq50_uid4.v
+      - rtl/user_domain/flopoco_workspace/IEEEFPAdd_8_23_Freq50_uid2.v
 
       - rtl/user_domain/fpinator.sv
 

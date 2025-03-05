@@ -57,10 +57,11 @@ module fpinator #(
   assign addr_d = obi_req_i.a.addr;
   assign wdata_d = obi_req_i.a.wdata;
 
-  IEEEFPAdd_8_23_comb_uid2 ieee_fp_adder (
-    .X ( op1_q  ),
-    .Y ( op2_q  ),
-    .R ( result )
+  IEEEFPAdd_8_23_Freq50_uid2 ieee_fp_adder (
+    .clk ( clk_i  ),
+    .X   ( op1_q  ),
+    .Y   ( op2_q  ),
+    .R   ( result )
   );
 
   // Assign the response data

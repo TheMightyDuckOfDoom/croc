@@ -16,6 +16,7 @@ set report_dir $::env(REPORTS)
 set save_dir $::env(SAVE)
 set time [elapsed_run_time]
 set step_by_step_debug 0
+set threads 64
 
 # helper scripts
 source scripts/reports.tcl
@@ -94,7 +95,7 @@ save_checkpoint ${proj_name}.pre_place
 ###############################################################################
 # GLOBAL PLACEMENT                                                            #
 ###############################################################################
-set_thread_count 8
+set_thread_count $threads
 
 set GPL_ARGS {  -density 0.60 }
 
@@ -259,7 +260,7 @@ repair_antennas -ratio_margin 30 -iterations 5
 
 
 utl::report "Detailed route"
-set_thread_count 8
+set_thread_count $threads
 detailed_route -output_drc ${report_dir}/${proj_name}_route_drc.rpt \
                -bottom_routing_layer Metal2 \
                -top_routing_layer TopMetal1 \

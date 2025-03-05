@@ -5,7 +5,7 @@ cd flopoco_workspace
 
 PWD=$(pwd)
 
-docker run --rm=true -v $PWD:/flopoco_workspace flopoco:debian-5.0.0 IEEEFPAdd we=8 wf=23
+docker run --rm=true -v $PWD:/flopoco_workspace flopoco:debian-5.0.0 IEEEFPAdd we=8 wf=23 frequency=50
 
 csplit -z flopoco.vhdl /end\ architecture\;/ '{*}' -f flopoco_ --suppress-matched -s
 
