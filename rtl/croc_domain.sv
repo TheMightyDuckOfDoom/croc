@@ -339,7 +339,7 @@ module croc_domain import croc_pkg::*; #(
   // -----------------
 
   for (genvar i = 0; i < NumSramBanks; i++) begin : gen_sram_bank
-    logic bank_req, bank_we, bank_gnt, bank_single_err;
+    logic bank_req, bank_we, bank_gnt;
     logic [SbrObiCfg.AddrWidth-1:0] bank_byte_addr;
     logic [SramBankAddrWidth-1:0] bank_word_addr;
     logic [SbrObiCfg.DataWidth-1:0] bank_wdata, bank_rdata;
@@ -368,25 +368,43 @@ module croc_domain import croc_pkg::*; #(
 
     assign bank_word_addr = bank_byte_addr[SbrObiCfg.AddrWidth-1:2];
 
+    // Use a 64-bit SRAM for the banks -> allows for more bandwidth to the user
+    logic bank64_req, bank64_we, bank64_gnt;
+    logic [SramBankAddrWidth-2:0] bank64_word_addr;
+    logic [63:0] bank64_wdata, bank64_rdata;
+    logic [ 7:0] bank64_be;
+    logic upper_half_d, upper_half_q;
+    
+    assign upper_half_d = bank_word_addr[0];
+    assign bank64_req = bank_req;
+    assign bank64_we  = bank_we;
+    assign bank64_word_addr = bank_word_addr[SramBankAddrWidth-1:1];
+    assign bank64_wdata = {bank_wdata, bank_wdata};
+    assign bank64_be    = upper_half_d ? {bank_be, 4'h0} : {4'h0, bank_be};
+    assign bank_rdata   = upper_half_q ? bank64_rdata[63:32] : bank64_rdata[31:0]; // Comes one cycle later
+    assign bank_gnt     = bank64_gnt;
+
+    `FF(upper_half_q, upper_half_d, '0, clk_i, rst_ni)
+
     tc_sram #(
-      .NumWords  ( SramBankNumWords ),
-      .DataWidth ( 32 ),
+      .NumWords  ( SramBankNumWords / 2 ),
+      .DataWidth ( 64 ),
       .NumPorts  (  1 ),
       .Latency   (  1 )
     ) i_sram (
       .clk_i,
       .rst_ni,
 
-      .req_i   ( bank_req       ),
-      .we_i    ( bank_we        ),
-      .addr_i  ( bank_word_addr ),
+      .req_i   ( bank64_req       ),
+      .we_i    ( bank64_we        ),
+      .addr_i  ( bank64_word_addr ),
 
-      .wdata_i ( bank_wdata ),
-      .be_i    ( bank_be    ),
-      .rdata_o ( bank_rdata )
+      .wdata_i ( bank64_wdata ),
+      .be_i    ( bank64_be    ),
+      .rdata_o ( bank64_rdata )
     );
 
-    assign bank_gnt = 1'b1;
+    assign bank64_gnt = 1'b1;
   end
 
 

@@ -135,10 +135,23 @@ module tc_sram #(
 
   end else if (NumWords == 256 & DataWidth == 64 & P1L1) begin : gen_256x64xBx1
     logic [63:0] wdata64, rdata64, bm64;
-    
-    assign rdata_o = rdata64;
-    assign wdata64 = wdata_i;
-    assign bm64    = bm;
+
+    // muxing neighboring bits instead of upper/lower 32bit reduces routing
+    always_comb begin : gen_bit_interleaving
+      for (int i = 0; i < 32; i++) begin
+          // duplicate each bit
+          wdata64[2*i]   = wdata_i[0][i]; // even bits (active if addr LSB is 0)
+          bm64[2*i]      = bm[0][i];
+          wdata64[2*i+1] = wdata_i[0][i]; // odd bits  (active if addr LSB is 1)
+          bm64[2*i+1]    = bm[0][i];
+
+          if(~sel_q) begin
+            rdata_o[0][i] = rdata64[2*i];   // even bits
+          end else begin
+            rdata_o[0][i] = rdata64[2*i+1]; // odd bitss
+          end
+      end
+    end 
 
     RM_IHPSG13_1P_256x64_c2_bm_bist i_cut (
       .A_CLK   ( clk_i    ),

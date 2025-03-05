@@ -89,7 +89,7 @@ verilator/croc.f: Bender.lock Bender.yml
 	$(BENDER) script verilator -t rtl -t verilator -DSYNTHESIS -DVERILATOR > $@
 
 ## Simulate RTL using Verilator
-verilator/obj_dir/Vtb_croc_soc: verilator/croc.f $(SW_HEX)
+verilator/obj_dir/Vtb_croc_soc: verilator/croc.f $(SW_HEX) $(wildcard rtl/*)
 	cd verilator; $(VERILATOR) $(VERILATOR_ARGS) -CFLAGS "-O0" --top tb_croc_soc -f croc.f
 
 verilator: verilator/obj_dir/Vtb_croc_soc
