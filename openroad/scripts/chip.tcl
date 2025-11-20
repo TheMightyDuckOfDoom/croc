@@ -90,6 +90,8 @@ set_wire_rc -signal -layer Metal4
 # don't touch any clock-tree related nets as
 # repair_timing can insert a 'split0000' buffer which then prevents CTS from running
 set clock_nets [get_nets -of_objects [get_pins -of_objects "*_reg" -filter "name == CLK"]]
+set clock_nets [concat $clock_nets [get_nets -of_objects [get_pins -of_objects "*_reg.i_sub" -filter "name == GATE"]]]
+set clock_nets [concat $clock_nets [get_nets -of_objects [get_pins -of_objects "*_reg.i_mst" -filter "name == GATE_N"]]]
 set_dont_touch $clock_nets
 set_dont_use $dont_use_cells
 

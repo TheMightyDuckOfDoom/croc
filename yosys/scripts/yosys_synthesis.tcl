@@ -129,6 +129,14 @@ yosys tee -q -a ${rep_dir}/${top_design}_instances.rpt  select -list "t:tc_clk*$
 # -----------------------------------------------------------------------------
 # mapping to technology
 
+# decompose flip-flops into latches
+if { 1 } {
+    yosys dfflegalize -cell \$_DFF_PN0_ r
+    yosys tee -q -o "${rep_dir}/${top_design}_dff2latch_legalize.rpt" stat -tech cmos
+    yosys techmap -map scripts/dff2latch.v
+    yosys tee -q -o "${rep_dir}/${top_design}_dff2latch_after.rpt" stat -tech cmos
+}
+
 # first map flip-flops
 yosys dfflibmap {*}$tech_cells_args
 
